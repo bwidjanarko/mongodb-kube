@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  labels:
+    app: mongodb-statefulset
+spec:
+  serviceName: mongodb-headless-service
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: mongodb-pod
+  template:
+    metadata:
+      labels:
+        app: mongodb-pod
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:4.4
+          #args: ["--dbpath","/data/replica_set"]
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                 configMapKeyRef:
+                   name: mongodb-cm
+                   key: cmdata.username 
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                 configMapKeyRef:
+                   name: mongodb-cm
+                   key: cmdata.password 
+          command: 
+            - mongod
+            - "--bind_ip_all"
+            - "--replSet=rs0"
+            - "--config=/etc/mongo/mongodb.conf"
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongodb-volume
+              mountPath: /data/replica_set
+            - name: mongodb-cm-volume
+              mountPath: /etc/mongo
+              readOnly: true
+      initContainers: # chenge ownership of /data/replica_set to mongo
+        - name: chmod
+          image: busybox:latest
+          command:
+          - /bin/chown
+          - -R
+          - "999:999"
+          - /data/replica_set
+          volumeMounts:
+            - name: mongodb-volume
+              mountPath: /data/replica_set
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                      - mongodb-pod
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: mongodb-cm-volume
+          configMap:
+            name: mongodb-cm
+            items:
+              - key: mongodb.conf
+                path: mongodb.conf
+      tolerations:
+      - key: "disktype"
+        operator: "Exists"
+        effect: "NoSchedule"
+  volumeClaimTemplates:
+    - metadata: 
+        name: mongodb-volume
+      spec:
+        storageClassName: nfs-client
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
