@@ -1,0 +1,36 @@
+apiVersion: v1
+items:
+- apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    creationTimestamp: "2025-05-09T06:20:36Z"
+    name: local-storage
+    resourceVersion: "1886633"
+    uid: 9937c504-6b2b-459e-bdd7-d448d1a8baf8
+  provisioner: kubernetes.io/no-provisioner
+  reclaimPolicy: Delete
+  volumeBindingMode: WaitForFirstConsumer
+- allowVolumeExpansion: true
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+    creationTimestamp: "2025-01-30T15:59:22Z"
+    labels:
+      app: nfs-subdir-external-provisioner
+      app.kubernetes.io/managed-by: Helm
+      chart: nfs-subdir-external-provisioner-4.0.18
+      heritage: Helm
+      release: nfs-subdir-external-provisioner
+    name: nfs-client
+    resourceVersion: "807069"
+    uid: 06d494de-b3ae-432e-8b67-625c78f42155
+  parameters:
+    archiveOnDelete: "true"
+  provisioner: cluster.local/nfs-subdir-external-provisioner
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+kind: List
+metadata:
+  resourceVersion: ""
